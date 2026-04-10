@@ -1,0 +1,19 @@
+{
+  "name": "scholarship-application-system",
+  "version": "1.0.0",
+  "description": "REST API for Scholarship Application System - IP FEB2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["scholarship", "rest-api", "express", "nodejs"],
+  "author": "Student",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

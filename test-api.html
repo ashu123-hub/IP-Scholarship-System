@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scholarship API Tester</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --surface2:  #22273a;
+      --border:    #2d3248;
+      --accent:    #6c63ff;
+      --accent2:   #a78bfa;
+      --green:     #10b981;
+      --red:       #ef4444;
+      --yellow:    #f59e0b;
+      --blue:      #3b82f6;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --radius:    12px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    header p { color: var(--muted); font-size: 0.95rem; }
+
+    .status-bar {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 999px; padding: 8px 20px; width: fit-content;
+      margin: 0 auto 32px; font-size: 0.85rem;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+           animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--accent); }
+
+    .card-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    }
+    .method-badge {
+      font-size: 0.7rem; font-weight: 700; padding: 3px 10px;
+      border-radius: 999px; font-family: 'JetBrains Mono', monospace;
+    }
+    .POST  { background: rgba(16,185,129,0.15); color: var(--green); }
+    .GET   { background: rgba(59,130,246,0.15); color: var(--blue); }
+    .PUT   { background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .DELETE{ background: rgba(239,68,68,0.15);  color: var(--red); }
+
+    .card-header h3 { font-size: 0.95rem; font-weight: 600; }
+    .endpoint-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem; color: var(--muted);
+      background: var(--bg); padding: 6px 10px; border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    label { font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 4px; }
+
+    input[type="number"], input[type="text"], input[type="email"], textarea, select {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 8px 12px;
+      font-size: 0.85rem; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 0.2s;
+      margin-bottom: 10px;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 100px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    button {
+      width: 100%; padding: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white; border: none; border-radius: 8px;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+    button:hover  { opacity: 0.9; }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .response-box {
+      margin-top: 12px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; display: none;
+    }
+    .response-box.visible { display: block; }
+    .response-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+      font-size: 0.78rem;
+    }
+    .status-chip {
+      padding: 2px 10px; border-radius: 999px; font-weight: 700;
+      font-size: 0.72rem; font-family: 'JetBrains Mono', monospace;
+    }
+    .s2xx { background: rgba(16,185,129,0.2); color: var(--green); }
+    .s4xx { background: rgba(245,158,11,0.2);  color: var(--yellow); }
+    .s5xx { background: rgba(239,68,68,0.2);   color: var(--red); }
+
+    .response-body {
+      padding: 12px; font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem; white-space: pre-wrap; color: #a5f3fc;
+      max-height: 200px; overflow-y: auto;
+    }
+
+    .log-section {
+      max-width: 1200px; margin: 24px auto 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .log-section h2 { font-size: 1rem; margin-bottom: 12px; color: var(--accent2); }
+    #requestLog { list-style: none; }
+    #requestLog li {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;
+    }
+    #requestLog li:last-child { border: none; }
+    .log-method { font-weight: 700; min-width: 60px; }
+    .log-url    { color: var(--muted); flex: 1; }
+    .log-status { font-weight: 700; }
+    .log-time   { color: var(--muted); font-size: 0.72rem; }
+    .empty-log  { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎓 Scholarship API Tester</h1>
+  <p>Test all your REST API endpoints without Postman — IP FEB2026</p>
+  <div class="status-bar">
+    <div class="dot"></div>
+    <span>Server running at <strong>http://localhost:3000</strong></span>
+  </div>
+</header>
+
+<div class="grid">
+
+  <!-- 1. APPLY -->
+  <div class="card">
+    <div class="card-header">
+      <span class="method-badge POST">POST</span>
+      <h3>Apply for Scholarship</h3>
+    </div>
+    <div class="endpoint-url">POST /scholarships/apply</div>
+    <div class="form-row">
+      <div><label>Full Name</label><input type="text" id="apply-name" placeholder="Rahul Sharma" value="Rahul Sharma"></div>
+      <div><label>Age</label><input type="number" id="apply-age" placeholder="20" value="20"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Annual Income (₹)</label><input type="number" id="apply-income" placeholder="250000" value="250000"></div>
+      <div><label>Percentage (%)</label><input type="number" id="apply-pct" placeholder="82" value="82"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Course</label><input type="text" id="apply-course" placeholder="BCA" value="BCA"></div>
+      <div><label>Email</label><input type="email" id="apply-email" placeholder="rahul@email.com" value="rahul@email.com"></div>
+    </div>
+    <button onclick="applyScholarship()">▶ Send Request</button>
+    <div class="response-box" id="res-apply">
+      <div class="response-header"><span>Response</span><span class="status-chip" id="chip-apply">—</span></div>
+      <div class="response-body" id="body-apply"></div>
+    </div>
+  </div>
+
+  <!-- 2. GET ALL -->
+  <div class="card">
+    <div class="card-header">
+      <span class="method-badge GET">GET</span>
+      <h3>Get All Applications</h3>
+    </div>
+    <div class="endpoint-url">GET /scholarships</div>
+    <label>Filter by Status (optional)</label>
+    <select id="filter-status">
+      <option value="">-- No Filter (show all) --</option>
+      <option value="Pending">Pending</option>
+      <option value="Approved">Approved</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+    <button onclick="getAllApplications()" style="margin-top:12px;">▶ Send Request</button>
+    <div class="response-box" id="res-getall">
+      <div class="response-header"><span>Response</span><span class="status-chip" id="chip-getall">—</span></div>
+      <div class="response-body" id="body-getall"></div>
+    </div>
+  </div>
+
+  <!-- 3. GET BY ID -->
+  <div class="card">
+    <div class="card-header">
+      <span class="method-badge GET">GET</span>
+      <h3>Get Application by ID</h3>
+    </div>
+    <div class="endpoint-url">GET /scholarships/:id</div>
+    <label>Application ID</label>
+    <input type="number" id="get-id" placeholder="1" value="1">
+    <button onclick="getById()">▶ Send Request</button>
+    <div class="response-box" id="res-getone">
+      <div class="response-header"><span>Response</span><span class="status-chip" id="chip-getone">—</span></div>
+      <div class="response-body" id="body-getone"></div>
+    </div>
+  </div>
+
+  <!-- 4. VERIFY -->
+  <div class="card">
+    <div class="card-header">
+      <span class="method-badge PUT">PUT</span>
+      <h3>Verify Application (Approve/Reject)</h3>
+    </div>
+    <div class="endpoint-url">PUT /scholarships/verify/:id</div>
+    <label>Application ID</label>
+    <input type="number" id="verify-id" placeholder="1" value="1">
+    <label>Decision</label>
+    <select id="verify-decision">
+      <option value="Approved">Approved</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+    <label>Verified By (Officer Name)</label>
+    <input type="text" id="verify-by" placeholder="Dr. A. Mehta" value="Dr. A. Mehta">
+    <label>Remarks</label>
+    <input type="text" id="verify-remarks" placeholder="Documents verified" value="All documents verified">
+    <button onclick="verifyApplication()">▶ Send Request</button>
+    <div class="response-box" id="res-verify">
+      <div class="response-header"><span>Response</span><span class="status-chip" id="chip-verify">—</span></div>
+      <div class="response-body" id="body-verify"></div>
+    </div>
+  </div>
+
+  <!-- 5. UPDATE -->
+  <div class="card">
+    <div class="card-header">
+      <span class="method-badge PUT">PUT</span>
+      <h3>Update Application</h3>
+    </div>
+    <div class="endpoint-url">PUT /scholarships/:id</div>
+    <label>Application ID</label>
+    <input type="number" id="upd-id" placeholder="1" value="1">
+    <div class="form-row">
+      <div><label>Name</label><input type="text" id="upd-name" placeholder="Updated Name"></div>
+      <div><label>Age</label><input type="number" id="upd-age" placeholder="21"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Annual Income (₹)</label><input type="number" id="upd-income" placeholder="280000"></div>
+      <div><label>Percentage (%)</label><input type="number" id="upd-pct" placeholder="88"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Course</label><input type="text" id="upd-course" placeholder="MCA"></div>
+      <div><label>Email</label><input type="email" id="upd-email" placeholder="new@email.com"></div>
+    </div>
+    <button onclick="updateApplication()">▶ Send Request</button>
+    <div class="response-box" id="res-update">
+      <div class="response-header"><span>Response</span><span class="status-chip" id="chip-update">—</span></div>
+      <div class="response-body" id="body-update"></div>
+    </div>
+  </div>
+
+  <!-- 6. DELETE -->
+  <div class="card">
+    <div class="card-header">
+      <span class="method-badge DELETE">DELETE</span>
+      <h3>Delete Application</h3>
+    </div>
+    <div class="endpoint-url">DELETE /scholarships/:id</div>
+    <label>Application ID to Delete</label>
+    <input type="number" id="del-id" placeholder="1" value="1">
+    <button onclick="deleteApplication()" style="background: linear-gradient(135deg,#ef4444,#dc2626);">▶ Send Request</button>
+    <div class="response-box" id="res-delete">
+      <div class="response-header"><span>Response</span><span class="status-chip" id="chip-delete">—</span></div>
+      <div class="response-body" id="body-delete"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Request Log -->
+<div class="log-section">
+  <h2>📊 Request Log</h2>
+  <ul id="requestLog"><li class="empty-log">No requests yet — send one above!</li></ul>
+</div>
+
+<script>
+  const BASE = 'http://localhost:3000';
+
+  async function sendRequest(method, url, body, resId, chipId, bodyId) {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Sending...';
+
+    try {
+      const options = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) options.body = JSON.stringify(body);
+
+      const res  = await fetch(url, options);
+      const data = await res.json();
+      const box  = document.getElementById(resId);
+      const chip = document.getElementById(chipId);
+      const bodyEl = document.getElementById(bodyId);
+
+      box.classList.add('visible');
+      chip.textContent = res.status + ' ' + res.statusText;
+      chip.className = 'status-chip ' + (res.ok ? 's2xx' : res.status >= 500 ? 's5xx' : 's4xx');
+      bodyEl.textContent = JSON.stringify(data, null, 2);
+
+      logRequest(method, url, res.status);
+    } catch (err) {
+      alert('❌ Could not connect to server. Is it running? Run: npm start');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '▶ Send Request';
+    }
+  }
+
+  function logRequest(method, url, status) {
+    const log = document.getElementById('requestLog');
+    const empty = log.querySelector('.empty-log');
+    if (empty) empty.remove();
+
+    const li = document.createElement('li');
+    const path = url.replace(BASE, '');
+    const methodClass = ['POST','GET','PUT','DELETE'].includes(method) ? method : 'GET';
+    const statusClass = status >= 500 ? 's5xx' : status >= 400 ? 's4xx' : 's2xx';
+    const now = new Date().toLocaleTimeString();
+    li.innerHTML = `
+      <span class="log-method ${methodClass}" style="color:var(--${methodClass==='POST'?'green':methodClass==='GET'?'blue':methodClass==='PUT'?'yellow':'red'})">${method}</span>
+      <span class="log-url">${path}</span>
+      <span class="log-status status-chip ${statusClass}">${status}</span>
+      <span class="log-time">${now}</span>`;
+    log.insertBefore(li, log.firstChild);
+  }
+
+  function applyScholarship() {
+    const body = {
+      name:         document.getElementById('apply-name').value,
+      age:          Number(document.getElementById('apply-age').value),
+      annualIncome: Number(document.getElementById('apply-income').value),
+      percentage:   Number(document.getElementById('apply-pct').value),
+      course:       document.getElementById('apply-course').value,
+      contactEmail: document.getElementById('apply-email').value,
+    };
+    sendRequest('POST', BASE + '/scholarships/apply', body, 'res-apply', 'chip-apply', 'body-apply');
+  }
+
+  function getAllApplications() {
+    const status = document.getElementById('filter-status').value;
+    const url = BASE + '/scholarships' + (status ? '?status=' + status : '');
+    sendRequest('GET', url, null, 'res-getall', 'chip-getall', 'body-getall');
+  }
+
+  function getById() {
+    const id = document.getElementById('get-id').value;
+    sendRequest('GET', BASE + '/scholarships/' + id, null, 'res-getone', 'chip-getone', 'body-getone');
+  }
+
+  function verifyApplication() {
+    const id = document.getElementById('verify-id').value;
+    const body = {
+      decision:   document.getElementById('verify-decision').value,
+      verifiedBy: document.getElementById('verify-by').value,
+      remarks:    document.getElementById('verify-remarks').value,
+    };
+    sendRequest('PUT', BASE + '/scholarships/verify/' + id, body, 'res-verify', 'chip-verify', 'body-verify');
+  }
+
+  function updateApplication() {
+    const id   = document.getElementById('upd-id').value;
+    const body = {};
+    const n = document.getElementById('upd-name').value;
+    const a = document.getElementById('upd-age').value;
+    const i = document.getElementById('upd-income').value;
+    const p = document.getElementById('upd-pct').value;
+    const c = document.getElementById('upd-course').value;
+    const e = document.getElementById('upd-email').value;
+    if (n) body.name = n;
+    if (a) body.age = Number(a);
+    if (i) body.annualIncome = Number(i);
+    if (p) body.percentage = Number(p);
+    if (c) body.course = c;
+    if (e) body.contactEmail = e;
+    sendRequest('PUT', BASE + '/scholarships/' + id, body, 'res-update', 'chip-update', 'body-update');
+  }
+
+  function deleteApplication() {
+    const id = document.getElementById('del-id').value;
+    if (!confirm('Delete application ID ' + id + '?')) return;
+    sendRequest('DELETE', BASE + '/scholarships/' + id, null, 'res-delete', 'chip-delete', 'body-delete');
+  }
+</script>
+</body>
+</html>
