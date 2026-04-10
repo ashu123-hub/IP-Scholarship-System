@@ -7,6 +7,9 @@ const { checkIncomeEligibility } = require('../utils/helpers');
 
 // Validate scholarship application body (POST / PUT update)
 const validateApplication = (req, res, next) => {
+  // ─── Bulk mode: skip middleware validation, controller handles it ──────
+  if (Array.isArray(req.body)) return next();
+
   const { name, age, annualIncome, percentage, course, contactEmail } = req.body;
   const errors = [];
 
@@ -69,6 +72,9 @@ const validateApplication = (req, res, next) => {
 //    > ₹6,00,000             → Rejected (HTTP 422)
 // ─────────────────────────────────────────────────────────────────────────────
 const validateIncomeLimit = (req, res, next) => {
+  // ─── Bulk mode: skip middleware validation, controller handles it ──────
+  if (Array.isArray(req.body)) return next();
+
   const { annualIncome } = req.body;
 
   // Skip if annualIncome is absent – let validateApplication catch that

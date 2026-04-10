@@ -6,28 +6,87 @@ let nextId = 1;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /scholarships/apply
-// Apply for a scholarship
+// Apply for a scholarship — supports single object OR array of students (bulk)
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Helper: process a single student application ─────────────────────────────
+const processSingleApplication = (student) => {
+  const { name, age, annualIncome, percentage, course, contactEmail } = student;
+
+  // ─── Business Rule 1: Income limit ────────────────────────────────────
+  if (annualIncome > 500000) {
+    return { success: false, name, reason: 'Annual income exceeds the ₹5,00,000 limit' };
+  }
+
+  // ─── Business Rule 2: Minimum Percentage Requirement ──────────────────
+  const gradeCheck = checkGradeEligibility(percentage);
+  if (!gradeCheck.eligible) {
+    return { success: false, name, reason: gradeCheck.reason };
+  }
+
+  // ─── Business Rule 3: Age Eligibility ─────────────────────────────────
+  const ageCheck = checkAgeEligibility(age);
+  if (!ageCheck.eligible) {
+    return { success: false, name, reason: ageCheck.reason };
+  }
+
+  // ─── Calculate Scholarship Amount ─────────────────────────────────────
+  const scholarshipAmount = calculateScholarshipAmount(annualIncome, percentage);
+
+  const newApplication = {
+    id: nextId++,
+    name,
+    age,
+    annualIncome,
+    percentage,
+    course,
+    contactEmail,
+    status: 'Pending',
+    scholarshipAmount,
+    appliedAt: new Date().toISOString(),
+    verifiedAt: null,
+    verifiedBy: null,
+  };
+
+  applications.push(newApplication);
+  return { success: true, data: newApplication };
+};
+
 const applyForScholarship = (req, res) => {
   try {
-    const { name, age, annualIncome, percentage, course, contactEmail } = req.body;
+    // ─── BULK MODE: Array of students ─────────────────────────────────────
+    if (Array.isArray(req.body)) {
+      if (req.body.length === 0) {
+        return res.status(400).json({ message: 'Request body array is empty' });
+      }
 
+      const results = req.body.map(processSingleApplication);
+
+      const succeeded = results.filter(r => r.success).map(r => r.data);
+      const failed    = results.filter(r => !r.success).map(r => ({ name: r.name, reason: r.reason }));
+
+      return res.status(207).json({
+        message: `Bulk apply complete: ${succeeded.length} accepted, ${failed.length} rejected`,
+        accepted: succeeded,
+        rejected: failed,
+      });
+    }
+
+    // ─── SINGLE MODE: One student object ──────────────────────────────────
     // Income limit already validated by validateIncomeLimit middleware.
     // req.incomeTier is either 'Full' or 'Partial'.
+    const { name, age, annualIncome, percentage, course, contactEmail } = req.body;
 
-    // ─── Business Rule 2: Minimum Percentage Requirement ──────────────────
     const gradeCheck = checkGradeEligibility(percentage);
     if (!gradeCheck.eligible) {
       return res.status(400).json({ message: gradeCheck.reason });
     }
 
-    // ─── Business Rule 3: Age Eligibility ─────────────────────────────────
     const ageCheck = checkAgeEligibility(age);
     if (!ageCheck.eligible) {
       return res.status(400).json({ message: ageCheck.reason });
     }
 
-    // ─── Calculate Scholarship Amount ─────────────────────────────────────
     const scholarshipAmount = calculateScholarshipAmount(annualIncome, percentage);
 
     const newApplication = {
