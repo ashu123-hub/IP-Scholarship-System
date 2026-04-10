@@ -1,7 +1,5 @@
 # 🎓 Scholarship Application System — REST API
 
-**IP FEB2026 | EXTC A|B**
-
 A structured **Node.js + Express.js** REST API for managing scholarship applications with business logic validation, custom logging middleware, and MVC architecture.
 
 ---
